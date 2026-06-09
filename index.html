@@ -1202,9 +1202,28 @@ try {
   if (stored) currentUser = JSON.parse(stored);
 } catch(e) {}
 
+// 최대 8초 후 강제 로딩 해제 안전망
+const _loadingTimer = setTimeout(() => {
+  hideLoading();
+  if (!document.getElementById('appShell').style.display || document.getElementById('appShell').style.display === 'none') {
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+}, 8000);
+
 if (currentUser) {
-  initApp().finally(hideLoading);
+  initApp()
+    .catch(e => {
+      console.error('initApp 오류:', e);
+      currentUser = null;
+      sessionStorage.removeItem('wl_current');
+      document.getElementById('authScreen').style.display = 'flex';
+    })
+    .finally(() => {
+      clearTimeout(_loadingTimer);
+      hideLoading();
+    });
 } else {
+  clearTimeout(_loadingTimer);
   hideLoading();
   document.getElementById('authScreen').style.display = 'flex';
 }
