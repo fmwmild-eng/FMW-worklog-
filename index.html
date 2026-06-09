@@ -104,13 +104,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 .task-item{border:1.5px solid var(--border);border-radius:8px;padding:10px;background:var(--surface);}
 .task-item-top{display:grid;grid-template-columns:auto auto 1fr 110px 32px;gap:6px;align-items:center;margin-bottom:6px;}
 .time-picker{display:flex;align-items:center;gap:2px;}
-.time-picker select{border:1.5px solid var(--border);border-radius:6px;padding:5px 3px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none;cursor:pointer;text-align:center;min-width:40px;}
+.time-picker select{border:1.5px solid var(--border);border-radius:6px;padding:5px 3px;font-family:'Pretendard',sans-serif;font-size:12px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none;cursor:pointer;text-align:center;min-width:40px;}
 .time-picker select:focus{border-color:var(--accent);}
 .time-picker-sep{font-size:13px;font-weight:700;color:var(--ink3);}
 .task-type-select{border:1.5px solid var(--border);border-radius:6px;padding:6px;font-family:inherit;font-size:12px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none;width:100%;}
 .task-title-input{border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--white);outline:none;width:100%;}
 .task-title-input:focus{border-color:var(--accent);}
-.time-duration{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent2);font-weight:600;text-align:center;background:var(--accent2-light);border-radius:4px;padding:4px;white-space:nowrap;}
+.time-duration{font-family:'Pretendard',sans-serif;font-size:11px;color:var(--accent2);font-weight:600;text-align:center;background:var(--accent2-light);border-radius:4px;padding:4px;white-space:nowrap;}
 .task-detail-input{width:100%;border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;font-family:inherit;font-size:12px;color:var(--ink2);background:var(--white);outline:none;resize:vertical;min-height:50px;line-height:1.5;}
 .task-detail-input:focus{border-color:var(--accent);}
 .remove-row-btn{width:32px;height:32px;border:1.5px solid var(--border);border-radius:6px;background:transparent;color:var(--ink3);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;touch-action:manipulation;}
@@ -400,7 +400,7 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
         <div class="ach-list" id="extraAchList"></div>
         <button class="add-row-btn" id="btnAddExtraAch">＋ 추가 성과 입력</button>
         <div class="divider" style="margin-top:14px"></div>
-        <div class="log-section-title">주요 성과 외 처리 업무 <span class="text-sm">(주요 성과 외 처리 건)</span></div>
+        <div class="log-section-title">주요 성과 외 처리 업무</div>
         <div class="extra-tasks-list" id="extraTaskList"></div>
         <button class="add-row-btn" id="btnAddExtraTask">＋ 처리 업무 추가</button>
         <div class="divider" style="margin-top:14px"></div>
@@ -817,7 +817,7 @@ function refreshEtNums() {
 }
 function addExtraTask(val) {
   const item = document.createElement('div'); item.className = 'extra-task-item';
-  item.innerHTML = '<span class="et-num">1</span><input type="text" class="task-title-input" placeholder="처리한 업무를 간략히 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn et-del">×</button>';
+  item.innerHTML = '<span class="et-num">1</span><input type="text" class="task-title-input" style="width:100%;min-width:0" placeholder="처리한 업무를 간략히 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn et-del">×</button>';
   item.querySelector('.et-del').addEventListener('click', () => {
     const list = document.getElementById('extraTaskList');
     if (list.querySelectorAll('.extra-task-item').length > 1) { item.remove(); refreshEtNums(); }
