@@ -142,7 +142,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 .ach-list{display:flex;flex-direction:column;gap:6px;}
 .ach-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
 .ach-num{font-size:12px;font-weight:800;color:var(--accent);text-align:center;}
-.extra-task-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
+.extra-task-item{display:flex;align-items:center;gap:6px;} .extra-task-item input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--white);outline:none;} .extra-task-item input:focus{border-color:var(--accent);}
 .et-num{font-size:12px;font-weight:800;color:var(--accent2);text-align:center;}
 .tomorrow-list{display:flex;flex-direction:column;gap:6px;}
 .tomorrow-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
@@ -817,7 +817,7 @@ function refreshEtNums() {
 }
 function addExtraTask(val) {
   const item = document.createElement('div'); item.className = 'extra-task-item';
-  item.innerHTML = '<span class="et-num">1</span><input type="text" class="task-title-input" style="width:100%;min-width:0" placeholder="처리한 업무를 간략히 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn et-del">×</button>';
+  item.innerHTML = '<span class="et-num">1</span><input type="text" placeholder="처리한 업무를 간략히 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn et-del">×</button>';
   item.querySelector('.et-del').addEventListener('click', () => {
     const list = document.getElementById('extraTaskList');
     if (list.querySelectorAll('.extra-task-item').length > 1) { item.remove(); refreshEtNums(); }
