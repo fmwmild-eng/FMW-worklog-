@@ -476,23 +476,28 @@ window._safetyTimer = setTimeout(function() {
 </div>
 <div class="toast" id="toast"></div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getDatabase, ref, set, get, update, push, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/12.14.0/firebase-database.js";
+<script>
+/* Firebase REST API — SDK 없이 fetch로 직접 통신 */
+const DB = "https://fmw-worklog-default-rtdb.firebaseio.com";
+const AK = "AIzaSyAQx5qcVdCOBe_0AsS_cIF03sZAxt5BZhE";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAQx5qcVdCOBe_0AsS_cIF03sZAxt5BZhE",
-  authDomain: "fmw-worklog.firebaseapp.com",
-  databaseURL: "https://fmw-worklog-default-rtdb.firebaseio.com",
-  projectId: "fmw-worklog",
-  storageBucket: "fmw-worklog.firebasestorage.app",
-  messagingSenderId: "810183450056",
-  appId: "1:810183450056:web:b20e4abcd7bcf7bb00b4fd",
-  measurementId: "G-WZXNSVRVCL"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+async function fbRead(path) {
+  const r = await fetch(DB + path + '.json?auth=' + AK);
+  if (!r.ok) return null;
+  return await r.json();
+}
+async function fbWrite(path, data) {
+  await fetch(DB + path + '.json?auth=' + AK, {
+    method: 'PUT', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+}
+async function fbPatch(path, data) {
+  await fetch(DB + path + '.json?auth=' + AK, {
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+}
 
 const ADMIN_CODE = 'admin2024!';
 const DIFF_LABELS = ['미설정','매우 쉬움','쉬움','보통','어려움','매우 어려움'];
@@ -527,17 +532,17 @@ function hideLoading() {
 
 /* ── FIREBASE HELPERS ── */
 async function fbGetUsers() {
-  const snap = await withTimeout(get(ref(db, 'users')), 5000, null);
-  if (!snap || !snap.exists()) return [];
-  return Object.values(snap.val());
+  const data = await fbRead('/users');
+  if (!data) return [];
+  return Object.values(data);
 }
 async function fbSaveUser(user) {
-  await set(ref(db, 'users/' + user.id), user);
+  await fbWrite('/users/' + user.id, user);
 }
 async function fbGetLogs(filters) {
-  const snap = await withTimeout(get(ref(db, 'logs')), 5000, null);
-  if (!snap || !snap.exists()) return [];
-  let logs = Object.values(snap.val());
+  const data = await fbRead('/logs');
+  if (!data) return [];
+  let logs = Object.values(data);
   if (filters && filters.userId) logs = logs.filter(l => l.userId === filters.userId);
   if (filters && filters.month) logs = logs.filter(l => l.date && l.date.startsWith(filters.month));
   if (filters && filters.team) logs = logs.filter(l => l.userTeam === filters.team);
@@ -545,37 +550,28 @@ async function fbGetLogs(filters) {
   return logs;
 }
 async function fbSaveLog(entry) {
-  // key = userId_date for upsert
   const key = entry.userId + '_' + entry.date.replace(/-/g,'');
   entry.fbKey = key;
-  await set(ref(db, 'logs/' + key), entry);
+  await fbWrite('/logs/' + key, entry);
 }
 async function fbUpdateLog(key, data) {
-  await update(ref(db, 'logs/' + key), data);
-}
-async function withTimeout(promise, ms, fallback) {
-  return Promise.race([
-    promise,
-    new Promise(resolve => setTimeout(() => resolve(fallback), ms))
-  ]);
+  await fbPatch('/logs/' + key, data);
 }
 async function fbGetTaskTypes() {
-  const snap = await withTimeout(get(ref(db, 'taskTypes')), 5000, null);
-  if (!snap || !snap.exists()) return [...DEFAULT_TYPES];
-  return snap.val();
+  const data = await fbRead('/taskTypes');
+  return data || [...DEFAULT_TYPES];
 }
 async function fbSaveTaskTypes(types) {
-  await set(ref(db, 'taskTypes'), types);
+  await fbWrite('/taskTypes', types);
 }
 async function fbGetDraft(uid) {
-  const snap = await withTimeout(get(ref(db, 'drafts/' + uid)), 5000, null);
-  return snap && snap.exists() ? snap.val() : null;
+  return await fbRead('/drafts/' + uid);
 }
 async function fbSaveDraft(uid, data) {
-  await set(ref(db, 'drafts/' + uid), data);
+  await fbWrite('/drafts/' + uid, data);
 }
 async function fbDeleteDraft(uid) {
-  await set(ref(db, 'drafts/' + uid), null);
+  await fbWrite('/drafts/' + uid, null);
 }
 
 /* ── AUTH ── */
