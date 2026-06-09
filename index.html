@@ -140,7 +140,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 
 /* ACHIEVEMENT / RESULTS */
 .ach-list{display:flex;flex-direction:column;gap:6px;}
-.ach-item{display:grid;grid-template-columns:1fr 32px;gap:6px;align-items:center;}
+.ach-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
+.ach-num{font-size:12px;font-weight:800;color:var(--accent);text-align:center;}
+.extra-task-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
+.et-num{font-size:12px;font-weight:800;color:var(--accent2);text-align:center;}
+.tomorrow-list{display:flex;flex-direction:column;gap:6px;}
+.tomorrow-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
+.tm-num{font-size:12px;font-weight:800;color:var(--purple);text-align:center;}
+.follow-item textarea{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;background:var(--white);resize:vertical;min-height:44px;line-height:1.5;}
+.follow-item textarea:focus{border-color:var(--accent);}
 .goal-result-row{border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--surface);margin-bottom:6px;}
 .goal-result-label{font-size:11px;font-weight:700;color:var(--ink3);margin-bottom:6px;}
 .goal-result-inputs{display:flex;gap:8px;align-items:center;}
@@ -389,15 +397,16 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
         <div id="goalResultList"></div>
         <div class="divider" style="margin-top:14px"></div>
         <div class="log-section-title">핵심 추가 성과 <span class="text-sm">(목표 외 주요 성과)</span></div>
-        <div class="ach-list" id="extraAchList"><div class="ach-item"><input type="text" class="task-title-input" placeholder="목표 외 달성한 주요 성과"><button class="remove-row-btn ea-del">×</button></div></div>
+        <div class="ach-list" id="extraAchList"></div>
         <button class="add-row-btn" id="btnAddExtraAch">＋ 추가 성과 입력</button>
         <div class="divider" style="margin-top:14px"></div>
-        <div class="log-section-title">처리한 업무 목록 <span class="text-sm">(주요 성과 외 처리 건)</span></div>
-        <div class="extra-tasks-list" id="extraTaskList"><div class="extra-task-item"><input type="text" class="task-title-input" placeholder="처리한 업무를 간략히 작성하세요"><button class="remove-row-btn et-del">×</button></div></div>
+        <div class="log-section-title">주요 성과 외 처리 업무 <span class="text-sm">(주요 성과 외 처리 건)</span></div>
+        <div class="extra-tasks-list" id="extraTaskList"></div>
         <button class="add-row-btn" id="btnAddExtraTask">＋ 처리 업무 추가</button>
         <div class="divider" style="margin-top:14px"></div>
         <div class="log-section-title">내일 예정 업무</div>
-        <div class="field"><textarea id="w_tomorrow" placeholder="내일 처리할 업무, 이월 건, 예정 미팅 등"></textarea></div>
+        <div class="tomorrow-list" id="tomorrowList"></div>
+        <button class="add-row-btn" id="btnAddTomorrow">＋ 예정 업무 추가</button>
       </div>
       <div class="card">
         <div class="card-title"><span class="icon icon-purple">🧘</span> 자기 평가</div>
@@ -660,6 +669,9 @@ function initWriteForm() {
   document.getElementById('taskList').innerHTML = '';
   addTask();
   document.getElementById('meetingList').innerHTML = '';
+  document.getElementById('extraAchList').innerHTML = ''; addExtraAch(); addExtraAch();
+  document.getElementById('extraTaskList').innerHTML = ''; addExtraTask(); addExtraTask();
+  document.getElementById('tomorrowList').innerHTML = ''; addTomorrow(); addTomorrow(); addTomorrow();
   syncGoalResults();
   initDiffStars();
 }
@@ -750,7 +762,7 @@ function addMeeting(data) {
   const row = document.createElement('div'); row.className = 'meeting-item';
   const ourActs = (data && data.ourActions && data.ourActions.length) ? data.ourActions : [''];
   const theirActs = (data && data.theirActions && data.theirActions.length) ? data.theirActions : [''];
-  const mkFollow = arr => arr.map(a => '<div class="follow-item"><input type="text" placeholder="항목" value="' + escHtml(a) + '"><button class="remove-row-btn" style="width:28px;height:28px">×</button></div>').join('');
+  const mkFollow = arr => arr.map(a => '<div class="follow-item"><textarea placeholder="항목 (엔터로 줄바꿈 가능)">' + escHtml(a) + '</textarea><button class="remove-row-btn" style="width:28px;height:28px">×</button></div>').join('');
   row.innerHTML = '<div class="meeting-top">'
     + makeTimePicker('m_start', data && data.startTime ? data.startTime : '')
     + makeTimePicker('m_end', data && data.endTime ? data.endTime : '')
@@ -769,7 +781,7 @@ function addMeeting(data) {
 
 function addFollowItem(list) {
   const item = document.createElement('div'); item.className = 'follow-item';
-  item.innerHTML = '<input type="text" placeholder="항목"><button class="remove-row-btn" style="width:28px;height:28px">×</button>';
+  item.innerHTML = '<textarea placeholder="항목 (엔터로 줄바꿈 가능)"></textarea><button class="remove-row-btn" style="width:28px;height:28px">×</button>';
   item.querySelector('.remove-row-btn').addEventListener('click', () => { if (list.querySelectorAll('.follow-item').length > 1) item.remove(); });
   list.appendChild(item);
 }
@@ -787,17 +799,44 @@ function syncGoalResults() {
   });
 }
 
-function addExtraAch() {
-  const item = document.createElement('div'); item.className = 'ach-item';
-  item.innerHTML = '<input type="text" class="task-title-input" placeholder="목표 외 달성한 주요 성과"><button class="remove-row-btn ea-del">×</button>';
-  item.querySelector('.ea-del').addEventListener('click', () => { if (document.getElementById('extraAchList').querySelectorAll('.ach-item').length > 1) item.remove(); });
-  document.getElementById('extraAchList').appendChild(item);
+function refreshAchNums() {
+  document.getElementById('extraAchList').querySelectorAll('.ach-num').forEach((n, i) => { n.textContent = i + 1; });
 }
-function addExtraTask() {
+function addExtraAch(val) {
+  const item = document.createElement('div'); item.className = 'ach-item';
+  item.innerHTML = '<span class="ach-num">1</span><input type="text" class="task-title-input" placeholder="목표 외 달성한 주요 성과" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn ea-del">×</button>';
+  item.querySelector('.ea-del').addEventListener('click', () => {
+    const list = document.getElementById('extraAchList');
+    if (list.querySelectorAll('.ach-item').length > 1) { item.remove(); refreshAchNums(); }
+  });
+  document.getElementById('extraAchList').appendChild(item);
+  refreshAchNums();
+}
+function refreshEtNums() {
+  document.getElementById('extraTaskList').querySelectorAll('.et-num').forEach((n, i) => { n.textContent = i + 1; });
+}
+function addExtraTask(val) {
   const item = document.createElement('div'); item.className = 'extra-task-item';
-  item.innerHTML = '<input type="text" class="task-title-input" placeholder="처리한 업무를 간략히 작성하세요"><button class="remove-row-btn et-del">×</button>';
-  item.querySelector('.et-del').addEventListener('click', () => { if (document.getElementById('extraTaskList').querySelectorAll('.extra-task-item').length > 1) item.remove(); });
+  item.innerHTML = '<span class="et-num">1</span><input type="text" class="task-title-input" placeholder="처리한 업무를 간략히 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn et-del">×</button>';
+  item.querySelector('.et-del').addEventListener('click', () => {
+    const list = document.getElementById('extraTaskList');
+    if (list.querySelectorAll('.extra-task-item').length > 1) { item.remove(); refreshEtNums(); }
+  });
   document.getElementById('extraTaskList').appendChild(item);
+  refreshEtNums();
+}
+function refreshTmNums() {
+  document.getElementById('tomorrowList').querySelectorAll('.tm-num').forEach((n, i) => { n.textContent = i + 1; });
+}
+function addTomorrow(val) {
+  const item = document.createElement('div'); item.className = 'tomorrow-item';
+  item.innerHTML = '<span class="tm-num">1</span><input type="text" class="task-title-input" placeholder="내일 처리할 업무를 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn tm-del">×</button>';
+  item.querySelector('.tm-del').addEventListener('click', () => {
+    const list = document.getElementById('tomorrowList');
+    if (list.querySelectorAll('.tomorrow-item').length > 1) { item.remove(); refreshTmNums(); }
+  });
+  document.getElementById('tomorrowList').appendChild(item);
+  refreshTmNums();
 }
 
 /* ── COLLECT ── */
@@ -805,11 +844,12 @@ function collectForm() {
   const goalItems = [...document.getElementById('goalList').querySelectorAll('.goal-item')];
   const goals = goalItems.map(item => ({ title: item.querySelector('.g_title').value.trim(), difficulty: parseInt(item.querySelector('.difficulty-select').dataset.val) || 0 })).filter(g => g.title);
   const tasks = [...document.getElementById('taskList').querySelectorAll('.task-item')].map(r => ({ startTime: getTimeVal(r.querySelector('.t_start')), endTime: getTimeVal(r.querySelector('.t_end')), title: r.querySelector('.t_title').value.trim(), type: r.querySelector('.t_type').value, detail: r.querySelector('.t_detail').value.trim() })).filter(t => t.title || t.detail);
-  const meetings = [...document.getElementById('meetingList').querySelectorAll('.meeting-item')].map(m => ({ startTime: getTimeVal(m.querySelector('.m_start')), endTime: getTimeVal(m.querySelector('.m_end')), with: m.querySelector('.m_with').value.trim(), content: m.querySelector('.m_content').value.trim(), decision: m.querySelector('.m_decision').value.trim(), ourActions: [...m.querySelectorAll('.m_our_list input')].map(i => i.value.trim()).filter(Boolean), theirActions: [...m.querySelectorAll('.m_their_list input')].map(i => i.value.trim()).filter(Boolean) })).filter(m => m.with || m.content);
+  const meetings = [...document.getElementById('meetingList').querySelectorAll('.meeting-item')].map(m => ({ startTime: getTimeVal(m.querySelector('.m_start')), endTime: getTimeVal(m.querySelector('.m_end')), with: m.querySelector('.m_with').value.trim(), content: m.querySelector('.m_content').value.trim(), decision: m.querySelector('.m_decision').value.trim(), ourActions: [...m.querySelectorAll('.m_our_list textarea')].map(i => i.value.trim()).filter(Boolean), theirActions: [...m.querySelectorAll('.m_their_list textarea')].map(i => i.value.trim()).filter(Boolean) })).filter(m => m.with || m.content);
   const goalResults = [...document.getElementById('goalResultList').querySelectorAll('.goal-result-row')].map(row => ({ result: row.querySelector('.goal-result-input').value.trim(), progress: row.querySelector('.goal-progress-select').value }));
   const extraAchs = [...document.getElementById('extraAchList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
   const extraTasks = [...document.getElementById('extraTaskList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
-  return { date: document.getElementById('w_date').value, startTime: document.getElementById('w_start').value, endTime: document.getElementById('w_end').value, goals, tasks, meetings, goalResults, extraAchs, extraTasks, tomorrow: document.getElementById('w_tomorrow').value.trim(), focusScore: parseInt(document.getElementById('w_focus').value), review1: document.getElementById('w_review1').value.trim() };
+  const tomorrow = [...document.getElementById('tomorrowList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
+  return { date: document.getElementById('w_date').value, startTime: document.getElementById('w_start').value, endTime: document.getElementById('w_end').value, goals, tasks, meetings, goalResults, extraAchs, extraTasks, tomorrow, focusScore: parseInt(document.getElementById('w_focus').value), review1: document.getElementById('w_review1').value.trim() };
 }
 
 /* ── SUBMIT ── */
@@ -839,7 +879,7 @@ function loadDraft(d) {
   document.getElementById('w_date').value = d.date || '';
   document.getElementById('w_start').value = d.startTime || '09:00';
   document.getElementById('w_end').value = d.endTime || '18:00';
-  document.getElementById('w_tomorrow').value = d.tomorrow || '';
+  // tomorrow handled below
   document.getElementById('w_focus').value = d.focusScore || 7;
   document.getElementById('w_review1').value = d.review1 || '';
   document.getElementById('focusVal').textContent = d.focusScore || 7;
@@ -863,11 +903,15 @@ function loadDraft(d) {
     if (sel && r.progress) sel.value = r.progress;
   });
   document.getElementById('extraAchList').innerHTML = '';
-  (d.extraAchs || []).forEach(a => { const item = document.createElement('div'); item.className = 'ach-item'; item.innerHTML = '<input type="text" class="task-title-input" value="' + escHtml(a) + '"><button class="remove-row-btn ea-del">×</button>'; item.querySelector('.ea-del').addEventListener('click', () => { if (document.getElementById('extraAchList').querySelectorAll('.ach-item').length > 1) item.remove(); }); document.getElementById('extraAchList').appendChild(item); });
-  if (!d.extraAchs || !d.extraAchs.length) addExtraAch();
+  (d.extraAchs || []).forEach(a => addExtraAch(a));
+  if (!d.extraAchs || !d.extraAchs.length) { addExtraAch(); addExtraAch(); }
   document.getElementById('extraTaskList').innerHTML = '';
-  (d.extraTasks || []).forEach(a => { const item = document.createElement('div'); item.className = 'extra-task-item'; item.innerHTML = '<input type="text" class="task-title-input" value="' + escHtml(a) + '"><button class="remove-row-btn et-del">×</button>'; item.querySelector('.et-del').addEventListener('click', () => { if (document.getElementById('extraTaskList').querySelectorAll('.extra-task-item').length > 1) item.remove(); }); document.getElementById('extraTaskList').appendChild(item); });
-  if (!d.extraTasks || !d.extraTasks.length) addExtraTask();
+  (d.extraTasks || []).forEach(a => addExtraTask(a));
+  if (!d.extraTasks || !d.extraTasks.length) { addExtraTask(); addExtraTask(); } 
+  document.getElementById('tomorrowList').innerHTML = '';
+  const tmArr = Array.isArray(d.tomorrow) ? d.tomorrow : (d.tomorrow ? [d.tomorrow] : []);
+  tmArr.forEach(t => addTomorrow(t));
+  if (!tmArr.length) { addTomorrow(); addTomorrow(); addTomorrow(); }
 }
 
 function resetForm() {
@@ -876,8 +920,9 @@ function resetForm() {
   document.getElementById('taskList').innerHTML = ''; addTask();
   document.getElementById('meetingList').innerHTML = '';
   syncGoalResults();
-  document.getElementById('extraAchList').innerHTML = ''; addExtraAch();
-  document.getElementById('extraTaskList').innerHTML = ''; addExtraTask();
+  document.getElementById('extraAchList').innerHTML = ''; addExtraAch(); addExtraAch();
+  document.getElementById('extraTaskList').innerHTML = ''; addExtraTask(); addExtraTask();
+  document.getElementById('tomorrowList').innerHTML = ''; addTomorrow(); addTomorrow(); addTomorrow();
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('w_date').value = today;
   document.getElementById('writeDateDisplay').textContent = formatDateKo(today);
@@ -956,7 +1001,13 @@ function renderLogDetail(l) {
   }
   if (l.extraAchs && l.extraAchs.length) { html += '<div class="log-section-title">✨ 추가 성과</div>'; l.extraAchs.forEach(a => { html += '<div class="log-task-row"><span class="log-task-content">' + escHtml(a) + '</span></div>'; }); }
   if (l.extraTasks && l.extraTasks.length) { html += '<div class="log-section-title">📝 처리한 업무</div>'; l.extraTasks.forEach(a => { html += '<div class="log-task-row"><span class="log-task-content">' + escHtml(a) + '</span></div>'; }); }
-  if (l.tomorrow) html += '<div class="log-section-title">📅 내일 예정</div><div class="log-task-detail" style="margin-top:0">' + escHtml(l.tomorrow) + '</div>';
+  if (l.tomorrow) {
+    const tmArr = Array.isArray(l.tomorrow) ? l.tomorrow : (l.tomorrow ? [l.tomorrow] : []);
+    if (tmArr.length) {
+      html += '<div class="log-section-title">📅 내일 예정</div>';
+      tmArr.forEach((t, i) => { html += '<div class="log-task-row"><span class="tm-badge" style="background:var(--purple-light);color:var(--purple);padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;flex-shrink:0">' + (i+1) + '</span><span class="log-task-content">' + escHtml(t) + '</span></div>'; });
+    }
+  }
   html += '<div class="log-section-title">🧘 자기 평가</div>';
   html += '<div class="log-task-row"><span class="log-task-type-chip">집중도</span><span class="log-task-content">' + (l.focusScore || '-') + ' / 10</span></div>';
   if (l.review1) html += '<div class="log-task-detail">잘한점/개선점: ' + escHtml(l.review1) + '</div>';
@@ -1100,8 +1151,9 @@ document.getElementById('tab-admin').addEventListener('click', () => switchPanel
 document.getElementById('btnAddTask').addEventListener('click', () => addTask());
 document.getElementById('btnAddType').addEventListener('click', addTaskType);
 document.getElementById('btnAddMeeting').addEventListener('click', () => addMeeting());
-document.getElementById('btnAddExtraAch').addEventListener('click', addExtraAch);
-document.getElementById('btnAddExtraTask').addEventListener('click', addExtraTask);
+document.getElementById('btnAddExtraAch').addEventListener('click', () => addExtraAch());
+document.getElementById('btnAddExtraTask').addEventListener('click', () => addExtraTask());
+document.getElementById('btnAddTomorrow').addEventListener('click', () => addTomorrow());
 document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
 document.getElementById('btnSubmit').addEventListener('click', submitLog);
 document.getElementById('btnMylogSearch').addEventListener('click', renderMyLogs);
