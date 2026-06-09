@@ -599,7 +599,7 @@ async function doLogin() {
   document.getElementById('loginError').style.display = 'none';
   currentUser = user;
   sessionStorage.setItem('wl_current', JSON.stringify(user));
-  initApp();
+  initApp().finally(hideLoading);
 }
 
 function doLogout() {
@@ -900,7 +900,6 @@ function loadDraft(d) {
   document.getElementById('w_date').value = d.date || '';
   document.getElementById('w_start').value = d.startTime || '09:00';
   document.getElementById('w_end').value = d.endTime || '18:00';
-  // tomorrow handled below
   document.getElementById('w_focus').value = d.focusScore || 7;
   document.getElementById('w_review1').value = d.review1 || '';
   document.getElementById('focusVal').textContent = d.focusScore || 7;
@@ -940,7 +939,7 @@ function loadDraft(d) {
 }
 
 function resetForm() {
-  document.getElementById('w_tomorrow').value = ''; document.getElementById('w_focus').value = 7; document.getElementById('w_review1').value = ''; document.getElementById('focusVal').textContent = 7;
+  document.getElementById('w_focus').value = 7; document.getElementById('w_review1').value = ''; document.getElementById('focusVal').textContent = 7;
   document.querySelectorAll('.goal-item').forEach((item, idx) => { item.querySelector('.g_title').value = ''; const ds = item.querySelector('.difficulty-select'); ds.dataset.val = 0; ds.querySelectorAll('.diff-star').forEach(s => s.classList.remove('active')); const lbl = document.getElementById('diffText' + idx); if (lbl) lbl.textContent = '미설정'; });
   document.getElementById('taskList').innerHTML = ''; addTask();
   document.getElementById('meetingList').innerHTML = '';
@@ -948,7 +947,6 @@ function resetForm() {
   document.getElementById('extraAchList').innerHTML = ''; addExtraAch(); addExtraAch();
   document.getElementById('extraTaskList').innerHTML = ''; addExtraTask(); addExtraTask();
   document.getElementById('tomorrowList').innerHTML = ''; addTomorrow(); addTomorrow(); addTomorrow();
-  document.getElementById('decisionList').innerHTML = ''; addDecision(); addDecision(); addDecision();
   document.getElementById('decisionList').innerHTML = ''; addDecision(); addDecision(); addDecision();
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('w_date').value = today;
