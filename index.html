@@ -293,6 +293,15 @@ input[type=time]::-webkit-calendar-picker-indicator{opacity:0.4;cursor:pointer;}
 <body>
 
 <div id="loadingScreen"><div class="spinner"></div><h2>📋 업무일지</h2><p>연결 중...</p></div>
+<script>
+// module script 로드 전에 미리 실행되는 안전망 타이머
+window._safetyTimer = setTimeout(function() {
+  var ls = document.getElementById('loadingScreen');
+  var auth = document.getElementById('authScreen');
+  if (ls) ls.style.display = 'none';
+  if (auth) auth.style.display = 'flex';
+}, 6000);
+</script>
 
 <div id="authScreen" style="display:none">
   <div class="auth-card">
@@ -511,20 +520,23 @@ function escHtml(str) {
   if (str == null) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>');
 }
-function hideLoading() { document.getElementById('loadingScreen').style.display = 'none'; }
+function hideLoading() {
+  if (window._safetyTimer) clearTimeout(window._safetyTimer);
+  document.getElementById('loadingScreen').style.display = 'none';
+}
 
 /* ── FIREBASE HELPERS ── */
 async function fbGetUsers() {
-  const snap = await get(ref(db, 'users'));
-  if (!snap.exists()) return [];
+  const snap = await withTimeout(get(ref(db, 'users')), 5000, null);
+  if (!snap || !snap.exists()) return [];
   return Object.values(snap.val());
 }
 async function fbSaveUser(user) {
   await set(ref(db, 'users/' + user.id), user);
 }
 async function fbGetLogs(filters) {
-  const snap = await get(ref(db, 'logs'));
-  if (!snap.exists()) return [];
+  const snap = await withTimeout(get(ref(db, 'logs')), 5000, null);
+  if (!snap || !snap.exists()) return [];
   let logs = Object.values(snap.val());
   if (filters && filters.userId) logs = logs.filter(l => l.userId === filters.userId);
   if (filters && filters.month) logs = logs.filter(l => l.date && l.date.startsWith(filters.month));
@@ -541,17 +553,23 @@ async function fbSaveLog(entry) {
 async function fbUpdateLog(key, data) {
   await update(ref(db, 'logs/' + key), data);
 }
+async function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallback), ms))
+  ]);
+}
 async function fbGetTaskTypes() {
-  const snap = await get(ref(db, 'taskTypes'));
-  if (!snap.exists()) return [...DEFAULT_TYPES];
+  const snap = await withTimeout(get(ref(db, 'taskTypes')), 5000, null);
+  if (!snap || !snap.exists()) return [...DEFAULT_TYPES];
   return snap.val();
 }
 async function fbSaveTaskTypes(types) {
   await set(ref(db, 'taskTypes'), types);
 }
 async function fbGetDraft(uid) {
-  const snap = await get(ref(db, 'drafts/' + uid));
-  return snap.exists() ? snap.val() : null;
+  const snap = await withTimeout(get(ref(db, 'drafts/' + uid)), 5000, null);
+  return snap && snap.exists() ? snap.val() : null;
 }
 async function fbSaveDraft(uid, data) {
   await set(ref(db, 'drafts/' + uid), data);
