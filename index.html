@@ -93,6 +93,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 .goal-item-top{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;margin-bottom:8px;}
 .goal-num{width:28px;height:28px;background:var(--accent-light);color:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
 .goal-diff-row{display:flex;align-items:center;gap:8px;padding-left:36px;flex-wrap:wrap;}
+.goal-check-wrap{display:flex;align-items:center;gap:6px;margin-left:auto;}
+.goal-checkbox{width:20px;height:20px;cursor:pointer;accent-color:var(--accent2);flex-shrink:0;}
+.goal-check-label{font-size:11px;font-weight:700;color:var(--ink3);white-space:nowrap;user-select:none;cursor:pointer;}
+.goal-check-label.done{color:var(--accent2);font-weight:800;}
 .goal-diff-label{font-size:11px;font-weight:600;color:var(--ink3);white-space:nowrap;}
 .difficulty-select{display:flex;gap:4px;align-items:center;}
 .diff-star{font-size:22px;cursor:pointer;color:#d1cfc4;transition:color 0.15s;line-height:1;touch-action:manipulation;user-select:none;}
@@ -394,9 +398,9 @@ window._safetyTimer = setTimeout(function() {
       <div class="card">
         <div class="card-title"><span class="icon icon-warn">🎯</span> 오늘의 목표 (우선순위 TOP 3)</div>
         <div class="goal-list" id="goalList">
-          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">1</div><input type="text" class="task-title-input g_title" placeholder="가장 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText0">미설정</span></div></div>
-          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">2</div><input type="text" class="task-title-input g_title" placeholder="두 번째 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText1">미설정</span></div></div>
-          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">3</div><input type="text" class="task-title-input g_title" placeholder="세 번째 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText2">미설정</span></div></div>
+          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">1</div><input type="text" class="task-title-input g_title" placeholder="가장 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText0">미설정</span></div><div class="goal-check-wrap"><input type="checkbox" class="goal-checkbox g_done" id="gDone0"><label class="goal-check-label" for="gDone0">수행 완료</label></div></div>
+          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">2</div><input type="text" class="task-title-input g_title" placeholder="두 번째 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText1">미설정</span></div><div class="goal-check-wrap"><input type="checkbox" class="goal-checkbox g_done" id="gDone1"><label class="goal-check-label" for="gDone1">수행 완료</label></div></div>
+          <div class="goal-item"><div class="goal-item-top"><div class="goal-num">3</div><input type="text" class="task-title-input g_title" placeholder="세 번째 중요한 업무 목표"></div><div class="goal-diff-row"><span class="goal-diff-label">업무 난이도</span><div class="difficulty-select" data-val="0"><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span><span class="diff-star">★</span></div><span class="diff-label-text" id="diffText2">미설정</span></div><div class="goal-check-wrap"><input type="checkbox" class="goal-checkbox g_done" id="gDone2"><label class="goal-check-label" for="gDone2">수행 완료</label></div></div>
         </div>
       </div>
       <div class="card">
@@ -693,6 +697,14 @@ function initDiffStars() {
     if (group) group.querySelectorAll('.diff-star').forEach((star, sidx) => {
       star.addEventListener('click', () => setDiff(group, sidx + 1, 'diffText' + idx));
     });
+    const cb = item.querySelector('.g_done');
+    const lbl = item.querySelector('.goal-check-label');
+    if (cb && lbl) {
+      cb.addEventListener('change', () => {
+        lbl.textContent = cb.checked ? '✅ 수행 완료' : '수행 완료';
+        lbl.classList.toggle('done', cb.checked);
+      });
+    }
   });
 }
 
@@ -889,7 +901,7 @@ function addDecision(val) {
 /* ── COLLECT ── */
 function collectForm() {
   const goalItems = [...document.getElementById('goalList').querySelectorAll('.goal-item')];
-  const goals = goalItems.map(item => ({ title: item.querySelector('.g_title').value.trim(), difficulty: parseInt(item.querySelector('.difficulty-select').dataset.val) || 0 })).filter(g => g.title);
+  const goals = goalItems.map(item => ({ title: item.querySelector('.g_title').value.trim(), difficulty: parseInt(item.querySelector('.difficulty-select').dataset.val) || 0, done: item.querySelector('.g_done') ? item.querySelector('.g_done').checked : false })).filter(g => g.title);
   const tasks = [...document.getElementById('taskList').querySelectorAll('.task-item')].map(r => ({ startTime: getTimeVal(r.querySelector('.t_start')), endTime: getTimeVal(r.querySelector('.t_end')), title: r.querySelector('.t_title').value.trim(), type: r.querySelector('.t_type').value, detail: r.querySelector('.t_detail').value.trim() })).filter(t => t.title || t.detail);
   const meetings = [...document.getElementById('meetingList').querySelectorAll('.meeting-item')].map(m => ({ startTime: getTimeVal(m.querySelector('.m_start')), endTime: getTimeVal(m.querySelector('.m_end')), with: m.querySelector('.m_with').value.trim(), content: m.querySelector('.m_content').value.trim(), decision: m.querySelector('.m_decision').value.trim(), ourActions: [...m.querySelectorAll('.m_our_list textarea')].map(i => i.value.trim()).filter(Boolean), theirActions: [...m.querySelectorAll('.m_their_list textarea')].map(i => i.value.trim()).filter(Boolean) })).filter(m => m.with || m.content);
   const goalResults = [...document.getElementById('goalResultList').querySelectorAll('.goal-result-row')].map(row => ({ result: row.querySelector('.goal-result-input').value.trim(), progress: row.querySelector('.goal-progress-select').value }));
@@ -933,9 +945,10 @@ function loadDraft(d) {
   const goalItems = [...document.getElementById('goalList').querySelectorAll('.goal-item')];
   (d.goals || []).forEach((g, i) => {
     if (!goalItems[i]) return;
-    const t = goalItems[i].querySelector('.g_title'), ds = goalItems[i].querySelector('.difficulty-select');
+    const t = goalItems[i].querySelector('.g_title'), ds = goalItems[i].querySelector('.difficulty-select'), cb = goalItems[i].querySelector('.g_done');
     if (t) t.value = typeof g === 'string' ? g : (g.title || '');
     if (ds && g.difficulty) setDiff(ds, g.difficulty, 'diffText' + i);
+    if (cb && g.done) { cb.checked = true; const lbl = goalItems[i].querySelector('.goal-check-label'); if(lbl) lbl.classList.add('done'); }
   });
   document.getElementById('taskList').innerHTML = '';
   (d.tasks || []).forEach(t => addTask(t)); if (!d.tasks || !d.tasks.length) addTask();
@@ -967,7 +980,7 @@ function loadDraft(d) {
 
 function resetForm() {
   document.getElementById('w_focus').value = 7; document.getElementById('w_review1').value = ''; document.getElementById('focusVal').textContent = 7;
-  document.querySelectorAll('.goal-item').forEach((item, idx) => { item.querySelector('.g_title').value = ''; const ds = item.querySelector('.difficulty-select'); ds.dataset.val = 0; ds.querySelectorAll('.diff-star').forEach(s => s.classList.remove('active')); const lbl = document.getElementById('diffText' + idx); if (lbl) lbl.textContent = '미설정'; });
+  document.querySelectorAll('.goal-item').forEach((item, idx) => { item.querySelector('.g_title').value = ''; const ds = item.querySelector('.difficulty-select'); ds.dataset.val = 0; ds.querySelectorAll('.diff-star').forEach(s => s.classList.remove('active')); const lbl = document.getElementById('diffText' + idx); if (lbl) lbl.textContent = '미설정'; const cb = item.querySelector('.g_done'); if(cb) cb.checked = false; const clbl = item.querySelector('.goal-check-label'); if(clbl) clbl.classList.remove('done'); });
   document.getElementById('taskList').innerHTML = ''; addTask();
   document.getElementById('meetingList').innerHTML = '';
   syncGoalResults();
@@ -982,15 +995,9 @@ function resetForm() {
 
 /* ── DENSITY ── */
 function calcDensity(d, adminEval) {
-  /* ── 1. 목표 수행 점수 (40점) — 이진 완료 여부 기준 ── */
+  /* ── 1. 목표 수행 점수 (40점) — 체크박스 수행 여부 기준 ── */
   const goalCount = d.goals.length || 1;
-  let completedGoals = 0;
-  d.goals.forEach((g, i) => {
-    const r = d.goalResults && d.goalResults[i];
-    const progress = !r ? '' : (typeof r === 'string' ? '' : (r.progress || ''));
-    // 100% 완료 또는 진행률 선택이 100% ✓ 이면 완료로 간주
-    if (progress === '100% ✓' || progress === '100%') completedGoals++;
-  });
+  const completedGoals = d.goals.filter(g => g.done === true).length;
   const goalScore = (completedGoals / goalCount) * 40;
 
   /* ── 2. 업무 실행 효율 점수 (30점) ── */
@@ -1233,8 +1240,8 @@ const SCORE_TOOLTIPS = {
     title: '목표 수행 점수 (40점)',
     lines: [
       '기준: 목표를 질질 끌지 않고 오늘 수행(완료)했는가를 평가',
-      '① 계산 방식: 오늘의 목표 TOP 3 중 완료 상태로 체크된 목표 개수에 따라 배점',
-      '② 점수 = (완료한 목표 개수 ÷ 등록한 총 목표 개수) × 40'
+      '① 계산 방식: 오늘의 목표 TOP 3 중 수행 완료 체크박스가 체크된 목표 개수에 따라 배점',
+      '② 점수 = (수행한 목표 개수 ÷ 등록한 총 목표 개수) × 40'
     ]
   },
   exec: {
