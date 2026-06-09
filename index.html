@@ -145,6 +145,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 .extra-task-item{display:flex;align-items:center;gap:6px;} .extra-task-item input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--white);outline:none;} .extra-task-item input:focus{border-color:var(--accent);}
 .et-num{font-size:12px;font-weight:800;color:var(--accent2);text-align:center;}
 .tomorrow-list{display:flex;flex-direction:column;gap:6px;}
+.decision-list{display:flex;flex-direction:column;gap:6px;}
+.decision-item{display:flex;align-items:center;gap:6px;}
+.decision-num{font-size:12px;font-weight:800;color:var(--danger);text-align:center;min-width:20px;}
+.decision-item input{flex:1;min-width:0;border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--white);outline:none;}
+.decision-item input:focus{border-color:var(--danger);}
 .tomorrow-item{display:grid;grid-template-columns:20px 1fr 32px;gap:6px;align-items:center;}
 .tm-num{font-size:12px;font-weight:800;color:var(--purple);text-align:center;}
 .follow-item textarea{width:100%;border:1.5px solid var(--border);border-radius:5px;padding:5px 8px;font-size:12px;font-family:inherit;outline:none;background:var(--white);resize:vertical;min-height:44px;line-height:1.5;}
@@ -672,6 +677,7 @@ function initWriteForm() {
   document.getElementById('extraAchList').innerHTML = ''; addExtraAch(); addExtraAch();
   document.getElementById('extraTaskList').innerHTML = ''; addExtraTask(); addExtraTask();
   document.getElementById('tomorrowList').innerHTML = ''; addTomorrow(); addTomorrow(); addTomorrow();
+  document.getElementById('decisionList').innerHTML = ''; addDecision(); addDecision(); addDecision();
   syncGoalResults();
   initDiffStars();
 }
@@ -839,6 +845,20 @@ function addTomorrow(val) {
   refreshTmNums();
 }
 
+function refreshDecisionNums() {
+  document.getElementById('decisionList').querySelectorAll('.decision-num').forEach((n, i) => { n.textContent = i + 1; });
+}
+function addDecision(val) {
+  const item = document.createElement('div'); item.className = 'decision-item';
+  item.innerHTML = '<span class="decision-num">1</span><input type="text" placeholder="상급자 의사결정이 필요한 내용을 작성하세요" value="' + (val ? escHtml(val) : '') + '"><button class="remove-row-btn dc-del">×</button>';
+  item.querySelector('.dc-del').addEventListener('click', () => {
+    const list = document.getElementById('decisionList');
+    if (list.querySelectorAll('.decision-item').length > 1) { item.remove(); refreshDecisionNums(); }
+  });
+  document.getElementById('decisionList').appendChild(item);
+  refreshDecisionNums();
+}
+
 /* ── COLLECT ── */
 function collectForm() {
   const goalItems = [...document.getElementById('goalList').querySelectorAll('.goal-item')];
@@ -849,7 +869,8 @@ function collectForm() {
   const extraAchs = [...document.getElementById('extraAchList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
   const extraTasks = [...document.getElementById('extraTaskList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
   const tomorrow = [...document.getElementById('tomorrowList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
-  return { date: document.getElementById('w_date').value, startTime: document.getElementById('w_start').value, endTime: document.getElementById('w_end').value, goals, tasks, meetings, goalResults, extraAchs, extraTasks, tomorrow, focusScore: parseInt(document.getElementById('w_focus').value), review1: document.getElementById('w_review1').value.trim() };
+  const decisions = [...document.getElementById('decisionList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
+  return { date: document.getElementById('w_date').value, startTime: document.getElementById('w_start').value, endTime: document.getElementById('w_end').value, goals, tasks, meetings, goalResults, extraAchs, extraTasks, tomorrow, decisions, focusScore: parseInt(document.getElementById('w_focus').value), review1: document.getElementById('w_review1').value.trim() };
 }
 
 /* ── SUBMIT ── */
@@ -912,6 +933,10 @@ function loadDraft(d) {
   const tmArr = Array.isArray(d.tomorrow) ? d.tomorrow : (d.tomorrow ? [d.tomorrow] : []);
   tmArr.forEach(t => addTomorrow(t));
   if (!tmArr.length) { addTomorrow(); addTomorrow(); addTomorrow(); }
+  document.getElementById('decisionList').innerHTML = '';
+  const dcArr = Array.isArray(d.decisions) ? d.decisions : (d.decisions ? [d.decisions] : []);
+  dcArr.forEach(t => addDecision(t));
+  if (!dcArr.length) { addDecision(); addDecision(); addDecision(); }
 }
 
 function resetForm() {
@@ -923,6 +948,8 @@ function resetForm() {
   document.getElementById('extraAchList').innerHTML = ''; addExtraAch(); addExtraAch();
   document.getElementById('extraTaskList').innerHTML = ''; addExtraTask(); addExtraTask();
   document.getElementById('tomorrowList').innerHTML = ''; addTomorrow(); addTomorrow(); addTomorrow();
+  document.getElementById('decisionList').innerHTML = ''; addDecision(); addDecision(); addDecision();
+  document.getElementById('decisionList').innerHTML = ''; addDecision(); addDecision(); addDecision();
   const today = new Date().toISOString().split('T')[0];
   document.getElementById('w_date').value = today;
   document.getElementById('writeDateDisplay').textContent = formatDateKo(today);
@@ -1007,6 +1034,10 @@ function renderLogDetail(l) {
       html += '<div class="log-section-title">📅 내일 예정</div>';
       tmArr.forEach((t, i) => { html += '<div class="log-task-row"><span class="tm-badge" style="background:var(--purple-light);color:var(--purple);padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;flex-shrink:0">' + (i+1) + '</span><span class="log-task-content">' + escHtml(t) + '</span></div>'; });
     }
+  }
+  if (l.decisions && l.decisions.length) {
+    html += '<div class="log-section-title" style="color:#dc2626">🚨 상급자 의사결정 필요 사항</div>';
+    l.decisions.forEach((t, i) => { html += '<div class="log-task-row"><span style="background:var(--danger-light);color:var(--danger);padding:1px 7px;border-radius:3px;font-size:11px;font-weight:700;flex-shrink:0">' + (i+1) + '</span><span class="log-task-content">' + escHtml(t) + '</span></div>'; });
   }
   html += '<div class="log-section-title">🧘 자기 평가</div>';
   html += '<div class="log-task-row"><span class="log-task-type-chip">집중도</span><span class="log-task-content">' + (l.focusScore || '-') + ' / 10</span></div>';
@@ -1154,6 +1185,7 @@ document.getElementById('btnAddMeeting').addEventListener('click', () => addMeet
 document.getElementById('btnAddExtraAch').addEventListener('click', () => addExtraAch());
 document.getElementById('btnAddExtraTask').addEventListener('click', () => addExtraTask());
 document.getElementById('btnAddTomorrow').addEventListener('click', () => addTomorrow());
+document.getElementById('btnAddDecision').addEventListener('click', () => addDecision());
 document.getElementById('btnSaveDraft').addEventListener('click', saveDraft);
 document.getElementById('btnSubmit').addEventListener('click', submitLog);
 document.getElementById('btnMylogSearch').addEventListener('click', renderMyLogs);
