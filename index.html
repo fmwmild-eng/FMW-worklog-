@@ -102,9 +102,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 /* TASKS */
 .task-list{display:flex;flex-direction:column;gap:6px;}
 .task-item{border:1.5px solid var(--border);border-radius:8px;padding:10px;background:var(--surface);}
-.task-item-top{display:grid;grid-template-columns:85px 85px 1fr 110px 32px;gap:6px;align-items:center;margin-bottom:6px;}
-.task-item-top input[type=time]{border:1.5px solid var(--border);border-radius:6px;padding:6px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);background:var(--white);outline:none;width:100%;-webkit-appearance:none;}
-.task-item-top input[type=time]:focus{border-color:var(--accent);}
+.task-item-top{display:grid;grid-template-columns:auto auto 1fr 110px 32px;gap:6px;align-items:center;margin-bottom:6px;}
+.time-picker{display:flex;align-items:center;gap:2px;}
+.time-picker select{border:1.5px solid var(--border);border-radius:6px;padding:5px 3px;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none;cursor:pointer;text-align:center;min-width:40px;}
+.time-picker select:focus{border-color:var(--accent);}
+.time-picker-sep{font-size:13px;font-weight:700;color:var(--ink3);}
 .task-type-select{border:1.5px solid var(--border);border-radius:6px;padding:6px;font-family:inherit;font-size:12px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none;width:100%;}
 .task-title-input{border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--white);outline:none;width:100%;}
 .task-title-input:focus{border-color:var(--accent);}
@@ -129,7 +131,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink)
 
 /* MEETING */
 .meeting-item{border:1.5px solid var(--border);border-radius:8px;padding:12px;background:var(--surface);margin-bottom:8px;}
-.meeting-top{display:grid;grid-template-columns:85px 85px 1fr 32px;gap:6px;align-items:center;margin-bottom:10px;}
+.meeting-top{display:grid;grid-template-columns:auto auto 1fr 32px;gap:6px;align-items:center;margin-bottom:10px;}
 .meeting-body{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .follow-list{display:flex;flex-direction:column;gap:4px;margin-top:6px;}
 .follow-item{display:grid;grid-template-columns:1fr 32px;gap:4px;align-items:center;}
@@ -682,18 +684,49 @@ async function addTaskType() {
 }
 async function removeTaskType(i) { taskTypes.splice(i, 1); await fbSaveTaskTypes(taskTypes); renderTypeChips(); }
 
+/* ── TIME PICKER HELPERS ── */
+function makeHourOpts(sel) {
+  let html = '<option value="">--</option>';
+  for (let h = 0; h <= 23; h++) html += '<option value="' + String(h).padStart(2,'0') + '">' + String(h).padStart(2,'0') + '</option>';
+  return html;
+}
+function makeMinOpts() {
+  let html = '<option value="">--</option>';
+  for (let m = 0; m < 60; m += 5) html += '<option value="' + String(m).padStart(2,'0') + '">' + String(m).padStart(2,'0') + '</option>';
+  return html;
+}
+function makeTimePicker(cls, timeVal) {
+  const h = timeVal ? timeVal.split(':')[0] : '';
+  const m = timeVal ? timeVal.split(':')[1] : '';
+  // round minute to nearest 5
+  const mRound = m ? String(Math.round(parseInt(m)/5)*5).padStart(2,'0') : '';
+  return '<div class="time-picker ' + cls + '">'
+    + '<select class="tp-h">' + makeHourOpts().replace('value="' + h + '"', 'value="' + h + '" selected') + '</select>'
+    + '<span class="time-picker-sep">:</span>'
+    + '<select class="tp-m">' + makeMinOpts().replace('value="' + mRound + '"', 'value="' + mRound + '" selected') + '</select>'
+    + '</div>';
+}
+function getTimeVal(picker) {
+  const h = picker.querySelector('.tp-h').value;
+  const m = picker.querySelector('.tp-m').value;
+  if (!h || !m) return '';
+  return h + ':' + m;
+}
+
 function addTask(data) {
   const row = document.createElement('div'); row.className = 'task-item';
   const opts = taskTypes.map(t => '<option value="' + escHtml(t) + '"' + (data && data.type === t ? ' selected' : '') + '>' + escHtml(t) + '</option>').join('');
   row.innerHTML = '<div class="task-item-top">'
-    + '<input type="time" class="t_start" value="' + (data && data.startTime ? data.startTime : '') + '">'
-    + '<input type="time" class="t_end" value="' + (data && data.endTime ? data.endTime : '') + '">'
+    + makeTimePicker('t_start', data && data.startTime ? data.startTime : '')
+    + makeTimePicker('t_end', data && data.endTime ? data.endTime : '')
     + '<input type="text" class="task-title-input t_title" placeholder="업무 제목" value="' + (data && data.title ? escHtml(data.title) : '') + '">'
     + '<select class="task-type-select t_type">' + opts + '</select>'
     + '<button class="remove-row-btn tr-del">×</button></div>'
     + '<textarea class="task-detail-input t_detail" placeholder="업무 내용을 구체적으로 작성하세요">' + (data && data.detail ? escHtml(data.detail) : '') + '</textarea>';
-  row.querySelector('.t_start').addEventListener('input', () => calcDuration(row));
-  row.querySelector('.t_end').addEventListener('input', () => calcDuration(row));
+  const startPicker = row.querySelector('.t_start');
+  const endPicker = row.querySelector('.t_end');
+  startPicker.querySelectorAll('select').forEach(s => s.addEventListener('change', () => calcDuration(row)));
+  endPicker.querySelectorAll('select').forEach(s => s.addEventListener('change', () => calcDuration(row)));
   row.querySelector('.tr-del').addEventListener('click', () => {
     if (document.getElementById('taskList').querySelectorAll('.task-item').length > 1) row.remove();
   });
@@ -701,7 +734,8 @@ function addTask(data) {
 }
 
 function calcDuration(row) {
-  const s = row.querySelector('.t_start').value, e = row.querySelector('.t_end').value;
+  const s = getTimeVal(row.querySelector('.t_start'));
+  const e = getTimeVal(row.querySelector('.t_end'));
   if (!s || !e) return;
   const [sh, sm] = s.split(':').map(Number), [eh, em] = e.split(':').map(Number);
   const mins = (eh * 60 + em) - (sh * 60 + sm); if (mins <= 0) return;
@@ -717,7 +751,10 @@ function addMeeting(data) {
   const ourActs = (data && data.ourActions && data.ourActions.length) ? data.ourActions : [''];
   const theirActs = (data && data.theirActions && data.theirActions.length) ? data.theirActions : [''];
   const mkFollow = arr => arr.map(a => '<div class="follow-item"><input type="text" placeholder="항목" value="' + escHtml(a) + '"><button class="remove-row-btn" style="width:28px;height:28px">×</button></div>').join('');
-  row.innerHTML = '<div class="meeting-top"><input type="time" class="m_start" value="' + (data && data.startTime ? data.startTime : '') + '"><input type="time" class="m_end" value="' + (data && data.endTime ? data.endTime : '') + '"><input type="text" class="task-title-input m_with" placeholder="참석자" value="' + (data && data.with ? escHtml(data.with) : '') + '"><button class="remove-row-btn m-del">×</button></div>'
+  row.innerHTML = '<div class="meeting-top">'
+    + makeTimePicker('m_start', data && data.startTime ? data.startTime : '')
+    + makeTimePicker('m_end', data && data.endTime ? data.endTime : '')
+    + '<input type="text" class="task-title-input m_with" placeholder="참석자" value="' + (data && data.with ? escHtml(data.with) : '') + '"><button class="remove-row-btn m-del">×</button></div>'
     + '<div class="meeting-body"><div class="field"><label>미팅 주요 내용</label><textarea class="m_content" style="min-height:56px">' + (data && data.content ? escHtml(data.content) : '') + '</textarea></div><div class="field"><label>결정 사항</label><textarea class="m_decision" style="min-height:56px">' + (data && data.decision ? escHtml(data.decision) : '') + '</textarea></div></div>'
     + '<div style="margin-top:10px"><div class="log-section-title" style="font-size:11px;color:var(--ink3);margin-top:0;margin-bottom:6px">📤 우리 팀 후속 조치</div><div class="follow-list m_our_list">' + mkFollow(ourActs) + '</div><button class="add-row-btn m-add-our" style="margin-top:4px">＋ 항목 추가</button></div>'
     + '<div style="margin-top:10px"><div class="log-section-title" style="font-size:11px;color:var(--ink3);margin-top:0;margin-bottom:6px">📥 상대측 후속 조치</div><div class="follow-list m_their_list">' + mkFollow(theirActs) + '</div><button class="add-row-btn m-add-their" style="margin-top:4px">＋ 항목 추가</button></div>';
@@ -767,8 +804,8 @@ function addExtraTask() {
 function collectForm() {
   const goalItems = [...document.getElementById('goalList').querySelectorAll('.goal-item')];
   const goals = goalItems.map(item => ({ title: item.querySelector('.g_title').value.trim(), difficulty: parseInt(item.querySelector('.difficulty-select').dataset.val) || 0 })).filter(g => g.title);
-  const tasks = [...document.getElementById('taskList').querySelectorAll('.task-item')].map(r => ({ startTime: r.querySelector('.t_start').value, endTime: r.querySelector('.t_end').value, title: r.querySelector('.t_title').value.trim(), type: r.querySelector('.t_type').value, detail: r.querySelector('.t_detail').value.trim() })).filter(t => t.title || t.detail);
-  const meetings = [...document.getElementById('meetingList').querySelectorAll('.meeting-item')].map(m => ({ startTime: m.querySelector('.m_start').value, endTime: m.querySelector('.m_end').value, with: m.querySelector('.m_with').value.trim(), content: m.querySelector('.m_content').value.trim(), decision: m.querySelector('.m_decision').value.trim(), ourActions: [...m.querySelectorAll('.m_our_list input')].map(i => i.value.trim()).filter(Boolean), theirActions: [...m.querySelectorAll('.m_their_list input')].map(i => i.value.trim()).filter(Boolean) })).filter(m => m.with || m.content);
+  const tasks = [...document.getElementById('taskList').querySelectorAll('.task-item')].map(r => ({ startTime: getTimeVal(r.querySelector('.t_start')), endTime: getTimeVal(r.querySelector('.t_end')), title: r.querySelector('.t_title').value.trim(), type: r.querySelector('.t_type').value, detail: r.querySelector('.t_detail').value.trim() })).filter(t => t.title || t.detail);
+  const meetings = [...document.getElementById('meetingList').querySelectorAll('.meeting-item')].map(m => ({ startTime: getTimeVal(m.querySelector('.m_start')), endTime: getTimeVal(m.querySelector('.m_end')), with: m.querySelector('.m_with').value.trim(), content: m.querySelector('.m_content').value.trim(), decision: m.querySelector('.m_decision').value.trim(), ourActions: [...m.querySelectorAll('.m_our_list input')].map(i => i.value.trim()).filter(Boolean), theirActions: [...m.querySelectorAll('.m_their_list input')].map(i => i.value.trim()).filter(Boolean) })).filter(m => m.with || m.content);
   const goalResults = [...document.getElementById('goalResultList').querySelectorAll('.goal-result-row')].map(row => ({ result: row.querySelector('.goal-result-input').value.trim(), progress: row.querySelector('.goal-progress-select').value }));
   const extraAchs = [...document.getElementById('extraAchList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
   const extraTasks = [...document.getElementById('extraTaskList').querySelectorAll('input')].map(i => i.value.trim()).filter(Boolean);
