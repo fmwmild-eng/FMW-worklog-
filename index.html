@@ -300,7 +300,7 @@ window._safetyTimer = setTimeout(function() {
   var auth = document.getElementById('authScreen');
   if (ls) ls.style.display = 'none';
   if (auth) auth.style.display = 'flex';
-}, 6000);
+}, 3000);
 </script>
 
 <div id="authScreen" style="display:none">
@@ -424,6 +424,10 @@ window._safetyTimer = setTimeout(function() {
       </div>
       <div class="card">
         <div class="card-title"><span class="icon icon-purple">🧘</span> 자기 평가</div>
+        <div class="log-section-title" style="margin-top:0;color:#dc2626">🚨 상급자 의사결정 필요 사항</div>
+        <div class="decision-list" id="decisionList"></div>
+        <button class="add-row-btn" id="btnAddDecision">＋ 의사결정 항목 추가</button>
+        <div class="divider" style="margin-top:14px"></div>
         <div class="focus-wrap">
           <div class="field" style="margin-bottom:8px"><label>오늘 업무 집중도 (1 = 산만, 10 = 몰입)</label></div>
           <div class="range-row"><input type="range" id="w_focus" min="1" max="10" value="7"><div class="range-val" id="focusVal">7</div></div>
@@ -612,13 +616,13 @@ async function doLogin() {
   if (!user) { document.getElementById('loginError').style.display = 'block'; return; }
   document.getElementById('loginError').style.display = 'none';
   currentUser = user;
-  sessionStorage.setItem('wl_current', JSON.stringify(user));
+  localStorage.setItem('wl_current', JSON.stringify(user));
   initApp().finally(hideLoading);
 }
 
 function doLogout() {
   currentUser = null;
-  sessionStorage.removeItem('wl_current');
+  localStorage.removeItem('wl_current');
   document.getElementById('appShell').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
 }
@@ -1210,7 +1214,7 @@ document.querySelectorAll('.et-del').forEach(btn => btn.addEventListener('click'
 
 // 초기 실행
 try {
-  const stored = sessionStorage.getItem('wl_current');
+  const stored = localStorage.getItem('wl_current');
   if (stored) currentUser = JSON.parse(stored);
 } catch(e) {}
 
@@ -1227,7 +1231,7 @@ if (currentUser) {
     .catch(e => {
       console.error('initApp 오류:', e);
       currentUser = null;
-      sessionStorage.removeItem('wl_current');
+      localStorage.removeItem('wl_current');
       document.getElementById('authScreen').style.display = 'flex';
     })
     .finally(() => {
